@@ -52,6 +52,8 @@ const createSphere = (radius, color, texturePath) => {
         ...(texture ? { map: texture } : { color })
       })
   const mesh = new THREE.Mesh(geometry, material)
+  mesh.castShadow = true
+  mesh.receiveShadow = true
   return mesh
 }
 
@@ -74,6 +76,7 @@ function addOrbitControls(camera, canvas) {
 function main() {
   const canvas = document.querySelector('#canvas')
   const renderer = new THREE.WebGLRenderer({ antialias: true, canvas })
+  // 透视摄像机，提供近大远小效果
   const camera = new THREE.PerspectiveCamera(75, 1, 1, 100)
   // 设置相机位置，位于屏幕中心靠下，远离屏幕方向，看到地球从远到近由小变大
   camera.position.set(-1, -12, 10)
@@ -81,6 +84,7 @@ function main() {
 
   addOrbitControls(camera, canvas)
   const scene = new THREE.Scene()
+  scene.background = new THREE.Color('#555')
   const light = new THREE.DirectionalLight(0xffffff, 6)
   // 根据相机位置调整光源位置，使球体能看清。光源相对于相机位置更远离屏幕，使球体底部有阴影效果。
   light.position.set(0, -12, 30)
