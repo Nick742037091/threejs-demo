@@ -16,14 +16,17 @@ function resizeRendererToDisplaySize(renderer) {
 const canvas = document.querySelector('#canvas')
 const renderer = new THREE.WebGLRenderer({ antialias: true, canvas })
 const camera = new THREE.PerspectiveCamera(75, 1, 1, 100)
+// 设置相机位置，位于屏幕中心靠下，远离屏幕方向，看到地球从远到近由小变大
+camera.position.set(-1, -12, 10)
+camera.lookAt(1, 12, -10)
 const scene = new THREE.Scene()
-scene.position.z = -10
 const light = new THREE.DirectionalLight(0xffffff, 3)
-light.position.set(0, 0, 100)
+// 根据相机位置调整光源位置，使球体能看清。光源相对于相机位置更远离屏幕，使球体底部有阴影效果。
+light.position.set(0, -12, 30)
 scene.add(light)
 
 const createSphere = (radius, color) => {
-  const segments = 6
+  const segments = 24
   const geometry = new THREE.SphereGeometry(radius, segments, segments)
   const material = new THREE.MeshPhongMaterial({ color })
   const mesh = new THREE.Mesh(geometry, material)
@@ -31,13 +34,13 @@ const createSphere = (radius, color) => {
 }
 
 // 太阳
-const sunMesh = createSphere(1, 0xff0000)
+const sunMesh = createSphere(2, 0xff0000)
 scene.add(sunMesh)
 
 // 地球
 const earthMesh = createSphere(0.6, 0x0000ff)
 // 相对于太阳圆点x轴偏移5
-earthMesh.position.x = 5
+earthMesh.position.x = 6
 // 地球添加为太阳的子节点，太阳自转会使地球绕太阳公转
 sunMesh.add(earthMesh)
 
