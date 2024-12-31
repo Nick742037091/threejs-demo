@@ -8,7 +8,13 @@ import * as THREE from 'three'
      ->相机
      ->光照
 */
-const showAxesHelper = true
+
+// 是否显示坐标轴辅助线
+const showAxesHelper = false
+// 是否开启球体平面着色，会显示条纹
+const sphereFlatShading = false
+// 设置球体光泽度
+const sphereShininess = 100
 
 // 使渲染器绘图缓冲器大小和canvas大小一致，避免展示块化
 function resizeRendererToDisplaySize(renderer) {
@@ -27,7 +33,12 @@ function resizeRendererToDisplaySize(renderer) {
 const createSphere = (radius, color) => {
   const segments = 24
   const geometry = new THREE.SphereGeometry(radius, segments, segments)
-  const material = new THREE.MeshPhongMaterial({ color })
+  // MeshPhongMaterial支持光照和光泽度
+  const material = new THREE.MeshPhongMaterial({
+    color,
+    flatShading: sphereFlatShading,
+    shininess: sphereShininess
+  })
   const mesh = new THREE.Mesh(geometry, material)
   return mesh
 }
