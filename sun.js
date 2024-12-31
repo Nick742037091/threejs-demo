@@ -15,6 +15,7 @@ const showAxesHelper = false
 const sphereFlatShading = false
 // 设置球体光泽度
 const sphereShininess = 100
+const spherePhysicalMaterial = false
 
 // 使渲染器绘图缓冲器大小和canvas大小一致，避免展示块化
 function resizeRendererToDisplaySize(renderer) {
@@ -30,15 +31,25 @@ function resizeRendererToDisplaySize(renderer) {
 }
 
 // 创建球体
-const createSphere = (radius, color) => {
+const createSphere = (radius, color, texturePath) => {
   const segments = 24
   const geometry = new THREE.SphereGeometry(radius, segments, segments)
-  // MeshPhongMaterial支持光照和光泽度
-  const material = new THREE.MeshPhongMaterial({
-    color,
-    flatShading: sphereFlatShading,
-    shininess: sphereShininess
-  })
+  const loader = new THREE.TextureLoader()
+  const texture = texturePath ? loader.load(texturePath) : null
+  // 1.MeshPhongMaterial实现3D效果，支持光照和光泽度
+  // 2.MeshStandardMaterial有更好的物理渲染效果
+  const material = spherePhysicalMaterial
+    ? new THREE.MeshPhysicalMaterial({
+        flatShading: sphereFlatShading,
+        roughness: 0.4,
+        metalness: 0.2,
+        ...(texture ? { map: texture } : { color })
+      })
+    : new THREE.MeshPhongMaterial({
+        flatShading: sphereFlatShading,
+        shininess: sphereShininess,
+        ...(texture ? { map: texture } : { color })
+      })
   const mesh = new THREE.Mesh(geometry, material)
   return mesh
 }
@@ -60,7 +71,7 @@ function main() {
   camera.position.set(-1, -12, 10)
   camera.lookAt(1, 12, -10)
   const scene = new THREE.Scene()
-  const light = new THREE.DirectionalLight(0xffffff, 3)
+  const light = new THREE.DirectionalLight(0xffffff, 6)
   // 根据相机位置调整光源位置，使球体能看清。光源相对于相机位置更远离屏幕，使球体底部有阴影效果。
   light.position.set(0, -12, 30)
   scene.add(light)
@@ -71,12 +82,12 @@ function main() {
   }
 
   // 太阳
-  const sunMesh = createSphere(2, 0xff0000)
+  const sunMesh = createSphere(2, 0xff0000, '/images/sun-material.jpg')
   addAxesHelper(sunMesh)
   scene.add(sunMesh)
 
   // 地球
-  const earthMesh = createSphere(0.6, 0x0000ff)
+  const earthMesh = createSphere(0.6, 0x0000ff, '/images/earth-material.jpg')
   addAxesHelper(earthMesh)
   // 相对于太阳圆点x轴偏移5
   earthMesh.position.x = 6
