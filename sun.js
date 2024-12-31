@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 
 /* 结构
 渲染器
@@ -62,6 +63,13 @@ function addAxesHelper(mesh) {
   axesHelper.renderOrder = 1
   mesh.add(axesHelper)
 }
+// 添加相机旋转控制
+function addOrbitControls(camera, canvas) {
+  const controls = new OrbitControls(camera, canvas)
+  // 可以围绕原点旋转
+  controls.target.set(0, 0, 0)
+  controls.update()
+}
 
 function main() {
   const canvas = document.querySelector('#canvas')
@@ -70,6 +78,8 @@ function main() {
   // 设置相机位置，位于屏幕中心靠下，远离屏幕方向，看到地球从远到近由小变大
   camera.position.set(-1, -12, 10)
   camera.lookAt(1, 12, -10)
+
+  addOrbitControls(camera, canvas)
   const scene = new THREE.Scene()
   const light = new THREE.DirectionalLight(0xffffff, 6)
   // 根据相机位置调整光源位置，使球体能看清。光源相对于相机位置更远离屏幕，使球体底部有阴影效果。
