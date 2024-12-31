@@ -13,6 +13,25 @@ function resizeRendererToDisplaySize(renderer) {
   return needResize
 }
 
+// 创建球体
+const createSphere = (radius, color) => {
+  const segments = 24
+  const geometry = new THREE.SphereGeometry(radius, segments, segments)
+  const material = new THREE.MeshPhongMaterial({ color })
+  const mesh = new THREE.Mesh(geometry, material)
+  return mesh
+}
+
+const showAxesHelper = true
+// 添加坐标轴辅助线
+function addAxesHelper(mesh) {
+  if (!showAxesHelper) return
+  const axesHelper = new THREE.AxesHelper()
+  axesHelper.material.depthTest = false
+  axesHelper.renderOrder = 1
+  mesh.add(axesHelper)
+}
+
 const canvas = document.querySelector('#canvas')
 const renderer = new THREE.WebGLRenderer({ antialias: true, canvas })
 const camera = new THREE.PerspectiveCamera(75, 1, 1, 100)
@@ -25,35 +44,30 @@ const light = new THREE.DirectionalLight(0xffffff, 3)
 light.position.set(0, -12, 30)
 scene.add(light)
 
-const createSphere = (radius, color) => {
-  const segments = 24
-  const geometry = new THREE.SphereGeometry(radius, segments, segments)
-  const material = new THREE.MeshPhongMaterial({ color })
-  const mesh = new THREE.Mesh(geometry, material)
-  return mesh
+function rotate(geometry, value, speed = 1) {
+  // 绕垂直显示器方向渲染
+  geometry.rotation.z = value * speed
 }
 
 // 太阳
 const sunMesh = createSphere(2, 0xff0000)
+addAxesHelper(sunMesh)
 scene.add(sunMesh)
 
 // 地球
 const earthMesh = createSphere(0.6, 0x0000ff)
+addAxesHelper(earthMesh)
 // 相对于太阳圆点x轴偏移5
 earthMesh.position.x = 6
 // 地球添加为太阳的子节点，太阳自转会使地球绕太阳公转
 sunMesh.add(earthMesh)
 
 const moonMesh = createSphere(0.3, 0xffff00)
+addAxesHelper(moonMesh)
 // 相对于地球圆点x轴偏移1
-moonMesh.position.x = 1
+moonMesh.position.x = 2
 // 月球添加为地球的子节点，地球自转会使月球绕地球公转
 earthMesh.add(moonMesh)
-
-const rotate = (geometry, value, speed = 1) => {
-  // 绕垂直显示器方向渲染
-  geometry.rotation.z = value * speed
-}
 
 // 定时旋转几何体
 function render(time) {
