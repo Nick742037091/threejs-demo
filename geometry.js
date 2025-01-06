@@ -40,7 +40,7 @@ function createMesh(geometry, positionX) {
 }
 
 function main() {
-  const canvas = document.querySelector('#canvas')
+  const canvas = document.querySelector('#c')
   const renderer = new THREE.WebGLRenderer({ anitialias: true, canvas })
   const scene = new THREE.Scene()
   // 几何体复用
@@ -64,10 +64,7 @@ function main() {
   function render(time) {
     // 获取canvas的宽高，动态设置相机比例，解决变形和模糊问题
     if (resizeRendererToDisplaySize(renderer)) {
-      console.log('rerender')
       const canvas = renderer.domElement
-      console.log('canvas width', canvas.clientWidth)
-      console.log('canvas height', canvas.clientHeight)
       camera.aspect = canvas.clientWidth / canvas.clientHeight
       camera.updateProjectionMatrix()
     }

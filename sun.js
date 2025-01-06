@@ -31,8 +31,12 @@ function resizeRendererToDisplaySize(renderer) {
   return needResize
 }
 
+function createOrbit() {
+  return new THREE.Object3D()
+}
+
 // 创建球体
-const createSphere = (radius, color, texturePath) => {
+const createSphere = (radius, color, texturePath, name) => {
   const segments = 24
   const geometry = new THREE.SphereGeometry(radius, segments, segments)
   const loader = new THREE.TextureLoader()
@@ -52,8 +56,7 @@ const createSphere = (radius, color, texturePath) => {
         ...(texture ? { map: texture } : { color })
       })
   const mesh = new THREE.Mesh(geometry, material)
-  mesh.castShadow = true
-  mesh.receiveShadow = true
+  mesh.name = name
   return mesh
 }
 
@@ -73,18 +76,32 @@ function addOrbitControls(camera, canvas) {
   controls.update()
 }
 
+class PickHelper {
+  constructor() {
+    this.raycaster = new THREE.Raycaster()
+  }
+  pick(normalizedPosition, scene, camera) {
+    this.raycaster.setFromCamera(normalizedPosition, camera)
+    const intersectedObjects = this.raycaster.intersectObjects(scene.children)
+    if (intersectedObjects.length) {
+      console.log('pickedObject', intersectedObjects[0].object.name)
+    }
+  }
+}
+
 function main() {
-  const canvas = document.querySelector('#canvas')
+  const canvas = document.querySelector('#c')
   const renderer = new THREE.WebGLRenderer({ antialias: true, canvas })
+  const scene = new THREE.Scene()
+  scene.background = new THREE.Color('#555')
+
   // 透视摄像机，提供近大远小效果
-  const camera = new THREE.PerspectiveCamera(75, 1, 1, 100)
+  const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100)
   // 设置相机位置，位于屏幕中心靠下，远离屏幕方向，看到地球从远到近由小变大
   camera.position.set(-1, -12, 10)
   camera.lookAt(1, 12, -10)
-
   addOrbitControls(camera, canvas)
-  const scene = new THREE.Scene()
-  scene.background = new THREE.Color('#555')
+
   const light = new THREE.DirectionalLight(0xffffff, 6)
   // 根据相机位置调整光源位置，使球体能看清。光源相对于相机位置更远离屏幕，使球体底部有阴影效果。
   light.position.set(0, -12, 30)
@@ -96,24 +113,53 @@ function main() {
   }
 
   // 太阳
-  const sunMesh = createSphere(2, 0xff0000, '/images/sun-material.jpg')
+  const sunOrbit = createOrbit()
+  const sunMesh = createSphere(2, 0xff0000, '/images/sun-material.jpg', 'Sun')
   addAxesHelper(sunMesh)
-  scene.add(sunMesh)
+  sunOrbit.add(sunMesh)
+  scene.add(sunOrbit)
 
   // 地球
-  const earthMesh = createSphere(0.6, 0x0000ff, '/images/earth-material.jpg')
+  const earthMesh = createSphere(
+    0.6,
+    0x0000ff,
+    '/images/earth-material.jpg',
+    'Earth'
+  )
   addAxesHelper(earthMesh)
   // 相对于太阳圆点x轴偏移5
   earthMesh.position.x = 6
   // 地球添加为太阳的子节点，太阳自转会使地球绕太阳公转
-  sunMesh.add(earthMesh)
+  sunOrbit.add(earthMesh)
 
-  const moonMesh = createSphere(0.3, 0xffff00)
+  const moonMesh = createSphere(0.3, 0xffff00, null, 'Moon')
   addAxesHelper(moonMesh)
   // 相对于地球圆点x轴偏移1
   moonMesh.position.x = 2
   // 月球添加为地球的子节点，地球自转会使月球绕地球公转
   earthMesh.add(moonMesh)
+
+  const pickPosition = { x: 0, y: 0 }
+  const pickHelper = new PickHelper()
+  clearPickPosition()
+  function getCanvasRelativePosition(event) {
+    const rect = canvas.getBoundingClientRect()
+    return {
+      x: ((event.clientX - rect.left) * canvas.width) / rect.width,
+      y: ((event.clientY - rect.top) * canvas.height) / rect.height
+    }
+  }
+
+  function setPickPosition(event) {
+    const pos = getCanvasRelativePosition(event)
+    pickPosition.x = (pos.x / canvas.width) * 2 - 1
+    pickPosition.y = (pos.y / canvas.height) * -2 + 1 // note we flip Y
+  }
+
+  function clearPickPosition() {
+    pickPosition.x = -100000
+    pickPosition.y = -100000
+  }
 
   // 定时旋转几何体
   function render(time) {
@@ -124,9 +170,9 @@ function main() {
       camera.updateProjectionMatrix()
     }
 
-    time *= 0.001
+    time *= 0.0005
     // 太阳自转
-    rotate(sunMesh, time, 1)
+    rotate(sunOrbit, time, 1)
     // 地球自转
     rotate(earthMesh, time, 4)
     // 月球自转
@@ -141,6 +187,12 @@ function main() {
   // 2.只在浏览器空闲时调用，避免影响高优先级的任务，提高性能，也更省电
   // 3.与css动画比较能实现更复杂的逻辑
   requestAnimationFrame(render)
+
+  canvas.addEventListener('click', (event) => {
+    setPickPosition(event)
+    pickHelper.pick(pickPosition, scene, camera)
+    clearPickPosition()
+  })
 }
 
 main()
