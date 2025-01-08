@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import PickHelper from './utils/PickerHelper'
 
 /* 结构
 渲染器
@@ -76,19 +77,6 @@ function addOrbitControls(camera, canvas) {
   controls.update()
 }
 
-class PickHelper {
-  constructor() {
-    this.raycaster = new THREE.Raycaster()
-  }
-  pick(normalizedPosition, scene, camera) {
-    this.raycaster.setFromCamera(normalizedPosition, camera)
-    const intersectedObjects = this.raycaster.intersectObjects(scene.children)
-    if (intersectedObjects.length) {
-      console.log('pickedObject', intersectedObjects[0].object.name)
-    }
-  }
-}
-
 function main() {
   const canvas = document.querySelector('#c')
   const renderer = new THREE.WebGLRenderer({ antialias: true, canvas })
@@ -139,28 +127,6 @@ function main() {
   // 月球添加为地球的子节点，地球自转会使月球绕地球公转
   earthMesh.add(moonMesh)
 
-  const pickPosition = { x: 0, y: 0 }
-  const pickHelper = new PickHelper()
-  clearPickPosition()
-  function getCanvasRelativePosition(event) {
-    const rect = canvas.getBoundingClientRect()
-    return {
-      x: ((event.clientX - rect.left) * canvas.width) / rect.width,
-      y: ((event.clientY - rect.top) * canvas.height) / rect.height
-    }
-  }
-
-  function setPickPosition(event) {
-    const pos = getCanvasRelativePosition(event)
-    pickPosition.x = (pos.x / canvas.width) * 2 - 1
-    pickPosition.y = (pos.y / canvas.height) * -2 + 1 // note we flip Y
-  }
-
-  function clearPickPosition() {
-    pickPosition.x = -100000
-    pickPosition.y = -100000
-  }
-
   // 定时旋转几何体
   function render(time) {
     // 获取canvas的宽高，动态设置相机比例，解决变形问题
@@ -188,10 +154,13 @@ function main() {
   // 3.与css动画比较能实现更复杂的逻辑
   requestAnimationFrame(render)
 
-  canvas.addEventListener('click', (event) => {
-    setPickPosition(event)
-    pickHelper.pick(pickPosition, scene, camera)
-    clearPickPosition()
+  new PickHelper({
+    canvas,
+    scene,
+    camera,
+    onClick: (object) => {
+      console.log('pickedObject', object.name)
+    }
   })
 }
 
