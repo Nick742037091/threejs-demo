@@ -7,8 +7,22 @@ import PickHelper from './utils/PickerHelper'
      ->场景->太阳->坐标轴
                  ->地球->坐标轴
                      ->月球->坐标轴        
-     ->相机
-     ->光照
+            ->光照
+     ->相机   
+
+轨道控制器(依赖相机和canvas元素)  
+*/
+
+/** 方向
+  从左到右: -x -> +x
+  从下到上: -y -> +y
+  从后到前: -z -> +z
+*/
+
+/* 自转和公转逻辑
+太阳上添加地球，太阳定时旋转，实现太阳的自转和地球的公转。
+地球上添加月球，地球定时旋转，实现地球的自转和月球的公转。
+月球定时旋转，实现月球的自转。
 */
 
 // 是否显示坐标轴辅助线
@@ -79,33 +93,33 @@ function addOrbitControls(camera, canvas) {
 
 function main() {
   const canvas = document.querySelector('#c')
+  // antialias: true 抗锯齿，避免渲染块化
   const renderer = new THREE.WebGLRenderer({ antialias: true, canvas })
   const scene = new THREE.Scene()
   scene.background = new THREE.Color('#555')
 
   // 透视摄像机，提供近大远小效果
   const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100)
-  // 设置相机位置，位于屏幕中心靠下，远离屏幕方向，看到地球从远到近由小变大
-  camera.position.set(-1, -12, 10)
-  camera.lookAt(1, 12, -10)
+  // 设置相机位置，位于屏幕中心之外，看到屏幕里面，看到物体从远到近由小变大
+  camera.position.set(0, 0, -20)
+  camera.lookAt(0, 0, 20)
   addOrbitControls(camera, canvas)
 
+  // 平行光，模拟太阳光效果
   const light = new THREE.DirectionalLight(0xffffff, 6)
-  // 根据相机位置调整光源位置，使球体能看清。光源相对于相机位置更远离屏幕，使球体底部有阴影效果。
-  light.position.set(0, -12, 30)
+  // 根据相机位置调整光源位置，使球体能看清。光源位于y轴正方向，使球体底部有阴影效果。
+  light.position.set(0, 20, 0)
   scene.add(light)
 
   function rotate(geometry, value, speed = 1) {
-    // 绕垂直显示器方向渲染
-    geometry.rotation.z = value * speed
+    // 绕y轴渲染
+    geometry.rotation.y = value * speed
   }
 
   // 太阳
-  const sunOrbit = createOrbit()
   const sunMesh = createSphere(2, 0xff0000, '/images/sun-material.jpg', 'Sun')
   addAxesHelper(sunMesh)
-  sunOrbit.add(sunMesh)
-  scene.add(sunOrbit)
+  scene.add(sunMesh)
 
   // 地球
   const earthMesh = createSphere(
@@ -118,7 +132,7 @@ function main() {
   // 相对于太阳圆点x轴偏移5
   earthMesh.position.x = 6
   // 地球添加为太阳的子节点，太阳自转会使地球绕太阳公转
-  sunOrbit.add(earthMesh)
+  sunMesh.add(earthMesh)
 
   const moonMesh = createSphere(0.3, 0xffff00, null, 'Moon')
   addAxesHelper(moonMesh)
@@ -137,11 +151,11 @@ function main() {
     }
 
     time *= 0.0005
-    // 太阳自转
-    rotate(sunOrbit, time, 1)
-    // 地球自转
+    // 通过太阳轨道实现太阳自转
+    rotate(sunMesh, time, 1)
+    // 通过地球轨道实现地球自转
     rotate(earthMesh, time, 4)
-    // 月球自转
+    // 通过月球轨道实现月球自转
     rotate(moonMesh, time, 10)
 
     // 重新渲染，刷新视图
